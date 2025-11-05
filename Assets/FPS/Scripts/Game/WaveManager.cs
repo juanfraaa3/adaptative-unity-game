@@ -39,13 +39,33 @@ public class WaveManager : MonoBehaviour
     {
         if (waitingForPlayerInput && playerInsideZone && !allWavesCompleted)
         {
-            if (Input.GetButton("L1") && Input.GetButton("R1"))
+            // 🔹 Primero verificamos si hay tutoriales activos
+            bool bloqueoActivo = false;
+
+            var allObjectives = FindObjectsOfType<Unity.FPS.Game.Objective>();
+            foreach (var obj in allObjectives)
             {
-                Debug.Log("Jugador presionó L1+R1 dentro de la arena → comenzando cuenta atrás para wave " + currentWaveIndex);
+                if ((obj.name.Contains("SimpleTextConsejoEscopeta") || obj.name.Contains("CambioDeArma")) && !obj.IsCompleted)
+                {
+                    bloqueoActivo = true;
+                    break;
+                }
+            }
+
+            // 🔹 Si NO hay bloqueo, se puede iniciar la oleada
+            if (!bloqueoActivo && Input.GetButton("L1") && Input.GetButton("R1"))
+            {
+                Debug.Log("✅ Jugador presionó L1+R1 → comenzando cuenta atrás para wave " + currentWaveIndex);
                 waitingForPlayerInput = false;
                 StartCoroutine(StartNextWave());
             }
+            // 🔹 Si hay bloqueo y el jugador intenta presionar, solo avisamos
+            else if (bloqueoActivo && Input.GetButton("L1") && Input.GetButton("R1"))
+            {
+                Debug.Log("⛔ Intento bloqueado: aún hay consejos activos (ConsejoEscopeta o CambioDeArma)");
+            }
         }
+
     }
 
     IEnumerator StartNextWave()

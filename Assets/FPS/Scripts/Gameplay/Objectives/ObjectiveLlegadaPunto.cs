@@ -33,7 +33,7 @@ namespace Unity.FPS.Gameplay
             {
                 Debug.Log("¡Jugador llegó a la zona!");
                 m_AreaReached = true;
-                CompleteObjective(string.Empty, string.Empty, "¡Objetivo completado! Has llegado a la zona.");
+                CompleteObjective(string.Empty, string.Empty, string.Empty);
 
                 // Activar el siguiente objetivo
                 if (NextObjective != null)

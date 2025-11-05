@@ -39,7 +39,7 @@ namespace Unity.FPS.Gameplay
                 // Si cumplió ambos requisitos
                 if (m_RunTimer >= m_RequiredRunTime && m_Jumped)
                 {
-                    CompleteObjective(string.Empty, string.Empty, "¡Objetivo completado!");
+                    CompleteObjective(string.Empty, string.Empty, "Bien hecho");
                 }
             }
             else

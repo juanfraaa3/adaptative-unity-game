@@ -56,7 +56,7 @@ namespace Unity.FPS.Gameplay
 
             if (m_EnemyKilled)
             {
-                CompleteObjective(string.Empty, string.Empty, "¡Objetivo completado! Enemigo eliminado.");
+                CompleteObjective(string.Empty, string.Empty, "Enemigo eliminado");
 
                 if (NextObjective != null)
                     NextObjective.SetActive(true);

@@ -32,7 +32,7 @@ namespace Unity.FPS.Gameplay
             if (Input.GetButtonDown("Crouch") && !m_HasCrouched)  // Si se presiona el botón de agacharse (modifica si es necesario)
             {
                 m_HasCrouched = true;
-                CompleteObjective(string.Empty, string.Empty, "¡Objetivo completado! Te agachaste.");
+                CompleteObjective(string.Empty, string.Empty, string.Empty);
 
                 // Activar el siguiente objetivo
                 if (NextObjective != null)

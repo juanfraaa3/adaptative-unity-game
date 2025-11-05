@@ -22,7 +22,11 @@ namespace Unity.FPS.Gameplay
             base.Start();
 
             EventManager.AddListener<EnemyKillEvent>(OnEnemyKilled);
-
+            foreach (var spawner in TurretSpawners)
+            {
+                if (spawner != null)
+                    spawner.OnEnemiesReset += HandleSpawnerReset;
+            }
             if (string.IsNullOrEmpty(Title))
                 Title = "Elimina las torretas finales";
 
@@ -30,6 +34,19 @@ namespace Unity.FPS.Gameplay
                 Description = "Destruye las tres torretas gigantes para completar el juego.";
 
             UpdateObjective(string.Empty, GetUpdatedCounter(), "Torretas destruidas: 0/" + TurretSpawners.Count);
+        }
+        void HandleSpawnerReset()
+        {
+            ResetObjectiveProgress();
+        }
+
+        void ResetObjectiveProgress()
+        {
+            clearedSpawners.Clear();
+            m_ObjectiveCompleted = false;
+
+            UpdateObjective(string.Empty, GetUpdatedCounter(),
+                "Torretas destruidas: 0/" + TurretSpawners.Count);
         }
 
         void OnEnemyKilled(EnemyKillEvent evt)
@@ -87,6 +104,13 @@ namespace Unity.FPS.Gameplay
         void OnDestroy()
         {
             EventManager.RemoveListener<EnemyKillEvent>(OnEnemyKilled);
+
+            // 🔹 Dejar de escuchar los eventos
+            foreach (var spawner in TurretSpawners)
+            {
+                if (spawner != null)
+                    spawner.OnEnemiesReset -= HandleSpawnerReset;
+            }
         }
     }
 }

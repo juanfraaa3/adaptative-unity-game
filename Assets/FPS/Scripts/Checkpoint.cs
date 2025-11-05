@@ -8,7 +8,7 @@ public class Checkpoint : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            CheckpointManager.Instance.SetCheckpoint(transform.position);
+            CheckpointManager.Instance.SetCheckpoint(transform.position, transform.rotation);
 
             if (PlayerStats.Instance != null)
             {

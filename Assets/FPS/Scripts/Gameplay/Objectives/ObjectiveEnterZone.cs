@@ -37,7 +37,8 @@ namespace Unity.FPS.Gameplay
             if (other.CompareTag("Player"))
             {
                 m_PlayerHasEntered = true;
-                CompleteObjective(string.Empty, string.Empty, "¡Objetivo completado! Entraste a la zona.");
+                CompleteObjective(string.Empty, string.Empty, string.Empty);
+
 
                 if (NextObjective != null)
                     NextObjective.SetActive(true);

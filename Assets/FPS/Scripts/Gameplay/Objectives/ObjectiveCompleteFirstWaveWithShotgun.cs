@@ -24,7 +24,7 @@ namespace Unity.FPS.Gameplay
 
         [Header("Textos")]
         [Tooltip("Texto que aparecerá al completar el objetivo")]
-        public string CompletionMessage = "¡Objetivo completado!";
+        public string CompletionMessage = "¡Oleada completada!";
 
         private bool m_WaveCompleted = false;
 
@@ -70,7 +70,7 @@ namespace Unity.FPS.Gameplay
                     string.Empty,
                     string.Empty,
                     string.IsNullOrEmpty(CompletionMessage)
-                        ? $"¡Objetivo completado! Oleada {WaveIndexToComplete + 1} superada."
+                        ? $"Oleada {WaveIndexToComplete + 1} superada."
                         : CompletionMessage
                 );
 

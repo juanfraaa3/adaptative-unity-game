@@ -10,7 +10,6 @@ namespace Unity.FPS.Gameplay
 
         [Header("Textos")]
         [Tooltip("Mensaje mostrado al completar este objetivo")]
-        public string CompletionMessage = "¡Has presionado el botón Cuadrado!";
 
         private bool m_Completed = false;
 
@@ -35,11 +34,8 @@ namespace Unity.FPS.Gameplay
             {
                 m_Completed = true;
 
-                CompleteObjective(
-                    string.Empty,
-                    string.Empty,
-                    string.IsNullOrEmpty(CompletionMessage) ? "¡Objetivo completado!" : CompletionMessage
-                );
+                CompleteObjective(string.Empty, string.Empty, string.Empty);
+
 
                 if (NextObjective != null)
                     NextObjective.SetActive(true);

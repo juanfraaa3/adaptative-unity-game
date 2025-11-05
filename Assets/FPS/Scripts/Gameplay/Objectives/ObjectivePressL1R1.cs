@@ -15,7 +15,7 @@ namespace Unity.FPS.Gameplay
 
         [Header("Textos")]
         [Tooltip("Mensaje mostrado al completar este objetivo")]
-        public string CompletionMessage = "¡Has activado la oleada!";
+        public string CompletionMessage = "¡Comenzando oleada!";
 
         private bool m_Completed = false;
 

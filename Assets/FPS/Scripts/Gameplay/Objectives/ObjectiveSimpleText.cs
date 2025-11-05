@@ -36,7 +36,8 @@ namespace Unity.FPS.Gameplay
             // Si ha pasado el tiempo, se marca el objetivo como completado
             if (m_Timer >= DisplayTime)
             {
-                CompleteObjective(string.Empty, string.Empty, "¡Objetivo completado! Texto mostrado.");
+                CompleteObjective(string.Empty, string.Empty, string.Empty);
+
 
                 // Activar el siguiente objetivo
                 if (NextObjective != null)

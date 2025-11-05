@@ -4,8 +4,8 @@ public class CheckpointManager : MonoBehaviour
 {
     public static CheckpointManager Instance;
 
-    private Vector3 lastCheckpoint;
-
+    private Vector3 lastCheckpointPosition;
+    private Quaternion lastCheckpointRotation;
     void Awake()
     {
         if (Instance == null)
@@ -19,13 +19,20 @@ public class CheckpointManager : MonoBehaviour
         }
     }
 
-    public void SetCheckpoint(Vector3 position)
+    // Guarda posición y rotación del jugador al alcanzar un checkpoint
+    public void SetCheckpoint(Vector3 position, Quaternion rotation)
     {
-        lastCheckpoint = position;
+        lastCheckpointPosition = position;
+        lastCheckpointRotation = rotation;
     }
 
     public Vector3 GetCheckpoint()
     {
-        return lastCheckpoint;
+        return lastCheckpointPosition;
+    }
+
+    public Quaternion GetCheckpointRotation()
+    {
+        return lastCheckpointRotation;
     }
 }

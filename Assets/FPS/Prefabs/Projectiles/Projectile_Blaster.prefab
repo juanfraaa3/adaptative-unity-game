@@ -47,7 +47,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   WeaponSource: {fileID: 0}
   WeaponName: 
-  Radius: 0.5
+  Radius: 0.1
   Root: {fileID: 3659995153115176982}
   Tip: {fileID: 1135791333161367127}
   MaxLifeTime: 5

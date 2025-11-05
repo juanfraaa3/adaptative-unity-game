@@ -52,7 +52,8 @@ namespace Unity.FPS.Gameplay
             if (m_JetpackTime >= 1f && m_JetpackActive) // 1 segundo de uso del jetpack
             {
                 m_UsedJetpack = true;
-                CompleteObjective(string.Empty, string.Empty, "¡Objetivo completado! Jetpack activado.");
+                CompleteObjective(string.Empty, string.Empty, string.Empty);
+
 
                 // Activamos el siguiente objetivo
                 if (NextObjective != null)

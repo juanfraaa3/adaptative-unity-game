@@ -31,7 +31,7 @@ namespace Unity.FPS.Gameplay
             {
                 m_HasJumped = true;
 
-                CompleteObjective(string.Empty, string.Empty, "¡Buen salto!");
+                CompleteObjective(string.Empty, string.Empty, string.Empty);
 
                 if (NextObjective != null)
                     NextObjective.SetActive(true);

@@ -1,0 +1,12 @@
+Checkpoint;Tiempo Absoluto (seg);Tiempo Desde Anterior (seg);Muertes entre checkpoints;Muertes totales;Muertes por enemigos;Muertes por vacío;Enemigos eliminados;Disparos Blaster;Acertados Blaster;Fallados Blaster;Precisión Blaster (%);Disparos Escopeta;Acertados Escopeta;Fallados Escopeta;Precisión Escopeta (%);Disparos Totales;Acertados Totales;Fallados Totales;Precisión Total (%)
+Checkpoint_1;0.00;0.00;0;0;0;0;0;0;0;0;0.0;0;0;0;0.0;0;0;0;0.0
+Checkpoint_2;76.64;76.64;0;0;0;0;6;98;42;56;42.9;0;0;0;0.0;98;42;56;42.9
+Checkpoint_3;116.54;39.90;0;0;0;0;0;51;27;24;52.9;0;0;0;0.0;51;27;24;52.9
+Checkpoint_4;186.20;69.66;1;1;0;1;0;0;0;0;0.0;0;0;0;0.0;0;0;0;0.0
+Checkpoint_5;290.98;104.78;1;2;0;1;8;92;56;36;60.9;0;0;0;0.0;92;56;36;60.9
+Checkpoint_6;1021.94;730.96;4;6;3;1;27;1152;500;652;43.4;74;10;64;13.5;1226;510;716;41.6
+Checkpoint_7;1037.00;15.06;0;6;0;0;4;20;4;16;20.0;5;2;3;40.0;25;6;19;24.0
+Checkpoint_8;1055.16;18.16;0;6;0;0;0;5;0;5;0.0;0;0;0;0.0;5;0;5;0.0
+Checkpoint_9;1307.46;252.30;9;15;1;8;3;41;21;20;51.2;2;0;2;0.0;43;21;22;48.8
+Checkpoint_10;1325.90;18.44;0;15;0;0;2;28;14;14;50.0;0;0;0;0.0;28;14;14;50.0
+Final_Level;1654.66;328.76;5;20;0;5;10;383;341;42;89.0;34;17;17;50.0;417;358;59;85.9

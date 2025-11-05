@@ -482,5 +482,21 @@ namespace Unity.FPS.Gameplay
             IsCrouching = crouched;
             return true;
         }
+        // 🔹 Método para restaurar la orientación del jugador y de la cámara
+        public void SetLookRotation(Quaternion targetRotation)
+        {
+            // Rotación horizontal (yaw)
+            transform.rotation = targetRotation;
+
+            // Reiniciar rotación vertical (pitch)
+            m_CameraVerticalAngle = 0f;
+
+            // Aplicar rotación a la cámara (mirar al frente)
+            if (PlayerCamera != null)
+            {
+                PlayerCamera.transform.localEulerAngles = new Vector3(m_CameraVerticalAngle, 0f, 0f);
+            }
+        }
+
     }
 }

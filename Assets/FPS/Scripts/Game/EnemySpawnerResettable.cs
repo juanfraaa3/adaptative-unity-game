@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 namespace Unity.FPS.Game
 {
@@ -20,7 +21,7 @@ namespace Unity.FPS.Game
         public List<SpawnInfo> InitialWave = new List<SpawnInfo>();
 
         private readonly List<GameObject> _live = new List<GameObject>();
-
+        public event Action OnEnemiesReset;
         private void Start()
         {
             SpawnInitial();
@@ -45,6 +46,8 @@ namespace Unity.FPS.Game
                 _live.RemoveAt(i);
             }
             SpawnInitial();
+
+            OnEnemiesReset?.Invoke();
         }
     }
 }

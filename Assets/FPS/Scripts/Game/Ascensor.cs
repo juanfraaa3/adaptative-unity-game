@@ -115,6 +115,7 @@ namespace Unity.FPS.Game
                 float t = Mathf.Clamp01(_time / MoveDuration);
                 float e = Easing.Evaluate(t);
                 PlatformToMove.position = Vector3.Lerp(PointA.position, PointB.position, e);
+                Physics.SyncTransforms(); // 🧱 fuerza actualización de físicas del ascensor
 
                 if (t >= 1f)
                 {
@@ -132,6 +133,8 @@ namespace Unity.FPS.Game
                 float t = Mathf.Clamp01(_time / MoveDuration);
                 float e = Easing.Evaluate(t);
                 PlatformToMove.position = Vector3.Lerp(PointB.position, PointA.position, e);
+                Physics.SyncTransforms(); // 🧱 sincroniza físicas en el descenso también
+
 
                 if (t >= 1f)
                 {
@@ -182,6 +185,24 @@ namespace Unity.FPS.Game
             ElevatorIsMoving = false; // ✅ asegurarse de liberar input
 
             Debug.Log("Ascensor reseteado y KillZone desactivada");
+        }
+
+        void OnTriggerEnter(Collider other)
+        {
+            if (other.CompareTag("Player"))
+            {
+                other.transform.SetParent(PlatformToMove);
+                Debug.Log("👣 Jugador ahora hijo del ascensor");
+            }
+        }
+
+        void OnTriggerExit(Collider other)
+        {
+            if (other.CompareTag("Player"))
+            {
+                other.transform.SetParent(null);
+                Debug.Log("👣 Jugador liberado del ascensor");
+            }
         }
     }
 }
