@@ -1,0 +1,97 @@
+using Unity.FPS.Game;
+using UnityEngine;
+
+namespace Unity.FPS.Gameplay
+{
+    /// <summary>
+    /// Se completa SOLO cuando:
+    /// 1) Este objective ya estaba activo, y
+    /// 2) Recibimos WaveStartedEvent para el índice configurado, y
+    /// 3) Luego recibimos WaveCompletedEvent para el mismo índice.
+    /// Así evitamos autocompletar por eventos viejos o de otra wave.
+    /// </summary>
+    public class ObjectiveCompleteWave : Objective
+    {
+        [Tooltip("Índice de la wave a completar (0 = primera)")]
+        public int WaveIndexToComplete = 0;
+
+        [Tooltip("Siguiente objetivo a activar al completarse")]
+        public GameObject NextObjective;
+
+        [Header("Textos")]
+        public string CompletionMessage = "¡Oleada superada!";
+
+        // Estado interno
+        private bool _armed = false;                // solo se arma si vemos WaveStarted después de estar activos
+        private int _activationFrame = -1;          // frame en el que este objective se activó
+        private bool _alreadyCompleted = false;
+
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+            _activationFrame = Time.frameCount;     // marca desde cuándo podemos considerar eventos “válidos”
+        }
+
+        protected override void Start()
+        {
+            base.Start();
+
+            // Suscribirse a eventos
+            EventManager.AddListener<WaveStartedEvent>(OnWaveStarted);
+            EventManager.AddListener<WaveCompletedEvent>(OnWaveCompleted);
+
+            if (string.IsNullOrEmpty(Title))
+                Title = $"Completa la oleada {WaveIndexToComplete + 1}";
+
+            if (string.IsNullOrEmpty(Description))
+                Description = "Derrota a todos los enemigos de la oleada.";
+        }
+
+        void OnWaveStarted(WaveStartedEvent evt)
+        {
+            if (_alreadyCompleted || IsCompleted) return;
+
+            // Ignorar eventos que hayan ocurrido ANTES de que este objective se activara
+            if (Time.frameCount <= _activationFrame) return;
+
+            if (evt.WaveIndex == WaveIndexToComplete)
+            {
+                _armed = true;
+                // Debug.Log($"[ObjectiveCompleteWave] Armed on wave {evt.WaveIndex} (frame {Time.frameCount})");
+            }
+        }
+
+        void OnWaveCompleted(WaveCompletedEvent evt)
+        {
+            if (_alreadyCompleted || IsCompleted) return;
+
+            // No completar si no vimos empezar esta wave DESPUÉS de activarnos
+            if (!_armed) return;
+
+            if (evt.WaveIndex == WaveIndexToComplete)
+            {
+                _alreadyCompleted = true;
+
+                CompleteObjective(
+                    string.Empty,
+                    string.Empty,
+                    string.IsNullOrEmpty(CompletionMessage)
+                        ? $"Oleada {WaveIndexToComplete + 1} superada."
+                        : CompletionMessage
+                );
+
+                if (NextObjective) NextObjective.SetActive(true);
+
+                // Limpieza
+                EventManager.RemoveListener<WaveStartedEvent>(OnWaveStarted);
+                EventManager.RemoveListener<WaveCompletedEvent>(OnWaveCompleted);
+            }
+        }
+
+        void OnDestroy()
+        {
+            EventManager.RemoveListener<WaveStartedEvent>(OnWaveStarted);
+            EventManager.RemoveListener<WaveCompletedEvent>(OnWaveCompleted);
+        }
+    }
+}
