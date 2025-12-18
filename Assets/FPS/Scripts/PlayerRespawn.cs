@@ -2,9 +2,13 @@ using UnityEngine;
 using Unity.FPS.Game;
 using Unity.FPS.Gameplay;
 using System.Collections;
+using System.IO;
+
 
 public class PlayerRespawn : MonoBehaviour
 {
+    public JitterMetricsLogger jitterLogger;
+
     Health m_Health;
     CharacterController m_Controller;
 
@@ -32,6 +36,79 @@ public class PlayerRespawn : MonoBehaviour
 
     void RespawnAtCheckpoint()
     {
+        // === Registrar DEATH en JetpackTrajectoryLogger ===
+        var traj = FindObjectOfType<JetpackTrajectoryLogger>();
+        if (traj != null)
+            traj.MarkDeath();
+
+        // === Registrar DEATH en JetpackOrientationMetrics ===
+        var orient = FindObjectOfType<JetpackOrientationMetrics>();
+        if (orient != null)
+            orient.MarkDeath();
+
+        var landing = FindObjectOfType<LandingMetricsLogger>();
+
+        Jetpack jp = GetComponent<Jetpack>();
+        JetpackOrientationMetrics metrics = GetComponent<JetpackOrientationMetrics>();
+        if (jp != null && metrics != null)
+        {
+
+            metrics.StopTrackingAndLog();
+            Debug.Log("JETPACK SEGMENT CLOSED (death @ RespawnAtCheckpoint)");
+        }
+        if (jitterLogger != null)
+        {
+            jitterLogger.loggingActive = false; //detener logging al morir
+            jitterLogger.Death = 1;       // 1 = muerte
+            jitterLogger.RetryNumber++;   // suma 1 retry
+            jitterLogger.AttemptID++;     // nuevo intento empieza al respawn
+
+            var wm = FindObjectOfType<WaveManager>();
+            if (wm != null)
+            {
+                float failTime = wm.GetWaveTimeWithOffset();
+                File.AppendAllText(
+                    jitterLogger.FilePath,
+                    $"WaveFailTime;{wm.CurrentWaveIndex};{failTime.ToString("F4")}\n"
+                );
+            }
+
+
+        }
+        // === Reiniciar AttemptID en los 3 pilares ===
+        if (traj != null)
+            traj.AttemptID++;
+
+        if (orient != null)
+            orient.AttemptID++;
+
+        if (landing != null)
+            landing.AttemptID++;
+        // === Registrar FIN DE INTENTO en Multitask ===
+        var multitask = GetComponent<MultitaskMetricsLogger>();
+        if (multitask != null)
+        {
+            multitask.EndAttempt(true);
+        }
+
+        Transform firstAnchor = GameObject.Find("TargetAnchor1")?.transform;
+
+        if (jp != null)
+        {
+            if (firstAnchor != null)
+            {
+                jp.OrientationTargetPlatform = firstAnchor;
+
+                if (metrics != null)
+                    metrics.ForceSetTargetAnchor(firstAnchor);
+
+                //Debug.Log("TARGET RESET → TargetAnchor1 (ALL PILLARS)");
+            }
+            else
+            {
+                Debug.LogError("❌ [Respawn] No se encontró 'TargetAnchor1' en la escena.");
+            }
+        }
         // 🔹 Limpiar solo los pickups sueltos por enemigos (prefab Loot_Health)
         foreach (var pickup in FindObjectsOfType<HealthPickup>())
         {
@@ -59,15 +136,8 @@ public class PlayerRespawn : MonoBehaviour
             m_Controller.enabled = true;
 
         // 🔹 Reactivar el arma
-        var weaponsManager = GetComponent<PlayerWeaponsManager>();
-        if (weaponsManager != null)
-        {
-            // CAMBIO ÚNICO: forzar el arma del slot 0
-            weaponsManager.SwitchToWeaponIndex(0, true);
+        StartCoroutine(DelayedWeaponEquip());
 
-            // Desactivar el apuntado (IsAiming) después de revivir
-            weaponsManager.SetAiming(false);
-        }
 
         // 🔹 Reactivar HUD si está desactivado
         GameObject hud = GameObject.Find("PlayerHUD");
@@ -108,6 +178,13 @@ public class PlayerRespawn : MonoBehaviour
         {
             waveManager.ResetWaves();
         }
+        JetpackTrajectoryLogger.LastRespawnTime = Time.time;
+        var landingLogger = FindObjectOfType<LandingMetricsLogger>();
+        if (landingLogger != null)
+        {
+            landingLogger.ForceClearSuppressFlag();
+            Debug.Log("[RESPAWN] _suppressNextSegment = FALSE (reset)");
+        }
     }
 
     void ResetWeaponAndCamera()
@@ -126,4 +203,27 @@ public class PlayerRespawn : MonoBehaviour
             playerCamera.fieldOfView = 60f;  // Restaurar el FOV al valor por defecto
         }
     }
+    IEnumerator DelayedWeaponEquip()
+    {
+        yield return new WaitForSeconds(0.1f); // ⏳ Espera a que el PlayerWeaponsManager se inicialice
+
+        var weaponsManager = GetComponent<PlayerWeaponsManager>();
+        if (weaponsManager != null)
+        {
+            weaponsManager.SwitchToWeaponIndex(0, true);
+            weaponsManager.SetAiming(false);
+
+            // Asegurarse de que el arma esté realmente activa
+            Transform weaponParent = transform.Find("Main Camera/FirstPersonSocket/WeaponParentSocket");
+            if (weaponParent != null && weaponParent.childCount > 0)
+            {
+                var weapon = weaponParent.GetChild(0);
+                if (weapon != null)
+                    weapon.gameObject.SetActive(true);
+            }
+
+            Debug.Log("✅ Arma equipada correctamente tras respawn (DelayedWeaponEquip)");
+        }
+    }
+
 }

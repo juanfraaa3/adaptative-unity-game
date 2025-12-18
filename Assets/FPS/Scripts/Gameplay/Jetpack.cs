@@ -42,6 +42,26 @@ namespace Unity.FPS.Gameplay
         [Tooltip("Sound played when using the jetpack")]
         public AudioClip JetpackSfx;
 
+        // ---- Analytics: Jetpack Orientation Tracking ----
+        [Header("Jetpack Orientation Analytics")]
+        [Tooltip("Plataforma objetivo para calcular el ángulo de orientación (por ejemplo Jump_platform_02)")]
+        public Transform OrientationTargetPlatform;  // la arrastras desde la jerarquía
+
+        JetpackOrientationMetrics m_OrientationMetrics;
+        bool m_IsFlyingSegment = false;
+        bool m_WasGroundedLastFrame = true;
+        int m_SegmentCounter = 0;
+        // ---------------------------------------------------
+        // --- Jetpack Segment Filtering ---
+        float m_AirborneTime = 0f;
+        float m_MinAirborneTime = 1.0f; // mínimo 1 seg en el aire para validar segmento
+
+        float m_HorizontalMovement = 0f;
+        float m_MinHorizontalMovement = 0.5f; // mínimo 0.5 metros de movimiento horizontal
+        Vector3 m_LastPosition;
+        // --------------------------------
+
+
         bool m_CanUseJetpack;
         PlayerCharacterController m_PlayerCharacterController;
         PlayerInputHandler m_InputHandler;
@@ -70,10 +90,63 @@ namespace Unity.FPS.Gameplay
 
             AudioSource.clip = JetpackSfx;
             AudioSource.loop = true;
+            m_OrientationMetrics = GetComponent<JetpackOrientationMetrics>();
+            m_WasGroundedLastFrame = m_PlayerCharacterController.IsGrounded;
+            m_LastPosition = transform.position;
+
+
         }
 
         void Update()
         {
+
+            bool grounded = m_PlayerCharacterController.IsGrounded;
+
+
+            // --- Contador de tiempo en el aire ---
+            if (!grounded)
+            {
+                m_AirborneTime += Time.deltaTime;
+            }
+            else
+            {
+                m_AirborneTime = 0f; // reset al tocar suelo
+            }
+            // --- Cálculo de movimiento horizontal ---
+            Vector3 horizontalDisplacement = transform.position - m_LastPosition;
+            horizontalDisplacement.y = 0f; // ignorar movimiento vertical
+
+            m_HorizontalMovement += horizontalDisplacement.magnitude;
+            m_LastPosition = transform.position;
+
+            // --- Inicio REAL del segmento de vuelo (suelo -> aire) ---
+            if (!grounded && m_WasGroundedLastFrame)
+            {
+                // AÚN NO INICIAMOS EL SEGMENTO AQUÍ
+                // Primero deben cumplirse las condiciones:
+                // - tiempo mínimo en el aire
+                // - movimiento horizontal mínimo
+            }
+
+            // --------------------------------------------------------------------
+            // 4. INICIO REAL DEL SEGMENTO (solo si cumple ambos filtros)
+            // --------------------------------------------------------------------
+            if (!m_IsFlyingSegment &&
+                m_AirborneTime >= m_MinAirborneTime &&
+                m_HorizontalMovement >= m_MinHorizontalMovement)
+            {
+                // Ahora sí comenzamos un segmento válido
+                m_IsFlyingSegment = true;
+
+                if (m_OrientationMetrics != null && OrientationTargetPlatform != null)
+                {
+                    m_SegmentCounter++;
+                    string segmentId = "JetpackSegment_" + m_SegmentCounter;
+
+                    m_OrientationMetrics.StartTracking(segmentId, OrientationTargetPlatform);
+                }
+            }
+
             // jetpack can only be used if not grounded and jump has been pressed again once in-air
             if (IsPlayergrounded())
             {
@@ -142,6 +215,24 @@ namespace Unity.FPS.Gameplay
                 if (AudioSource.isPlaying)
                     AudioSource.Stop();
             }
+            // --- Fin del segmento de vuelo (aire -> suelo) ---
+            if (grounded && !m_WasGroundedLastFrame)
+            {
+                if (m_IsFlyingSegment && m_OrientationMetrics != null)
+                {
+                    m_OrientationMetrics.StopTrackingAndLog();
+                }
+
+                m_IsFlyingSegment = false;
+                // Reset filtros
+                m_AirborneTime = 0f;
+                m_HorizontalMovement = 0f;
+
+            }
+
+
+            // Actualizar para el siguiente frame
+            m_WasGroundedLastFrame = grounded;
         }
 
         public bool TryUnlock()

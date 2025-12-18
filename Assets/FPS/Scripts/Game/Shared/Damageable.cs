@@ -45,7 +45,26 @@ namespace Unity.FPS.Game
 
                 // apply the damages
                 Health.TakeDamage(totalDamage, damageSource);
+
+                // 🔥 Time-to-Target por PRIMER IMPACTO (cualquier daño al ENEMIGO)
+                if (Health.CompareTag("Enemy"))
+                {
+                    Debug.Log("🔥 DAMAGEABLE recibió daño → enemigo: " + Health.name);
+
+                    var logger = GameObject.FindObjectOfType<JitterMetricsLogger>();
+                    if (logger != null)
+                    {
+                        Debug.Log("🔥 NOTIFY → enviando NotifyEnemyHit()");
+                        logger.NotifyEnemyHit(Health.transform);
+                    }
+                    else
+                    {
+                        Debug.Log("❌ Logger NO encontrado en escena");
+                    }
+
+                }
             }
         }
+
     }
 }

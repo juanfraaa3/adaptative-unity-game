@@ -8,15 +8,18 @@ namespace Unity.FPS.Game
     {
         [Header("Platform Setup")]
         public Transform PlatformToMove;
-        public Transform PointA; // abajo
-        public Transform PointB; // arriba
+        public Transform PointA;
+        public Transform PointB;
         public float MoveDuration = 1.0f;
         public AnimationCurve Easing = AnimationCurve.EaseInOut(0, 0, 1, 1);
         public bool PlaceAtAOnPlay = true;
 
         [Header("Player Setup")]
-        public Health PlayerHealth; // arrastra aquí el Health del jugador
-        public GameObject PlayerObject; // arrastra aquí el Player (opcional)
+        public Health PlayerHealth;
+        public GameObject PlayerObject;
+        public CharacterController PlayerController;
+        public Collider PlayerCollider;
+        public float PlayerYOffset = 1.7f;
 
         [Header("Kill Zone Setup")]
         public GameObject KillZone;
@@ -28,8 +31,11 @@ namespace Unity.FPS.Game
         bool _alreadyUsed;
         bool _canGoDown;
 
-        // 🔒 Flag global para bloquear el crouch mientras el ascensor se mueve
         public static bool ElevatorIsMoving = false;
+        bool _transportingPlayer = false;
+
+        // 🆕 Offset exacto del jugador respecto al ascensor
+        private Vector3 _playerLocalOffset;
 
         public bool HasAlreadyUsed => _alreadyUsed;
 
@@ -69,7 +75,7 @@ namespace Unity.FPS.Game
             _canGoDown = true;
         }
 
-        // ===== MOVER HACIA ARRIBA =====
+        // ===== SUBIR =====
         public void StartMoveUp()
         {
             if (!_alreadyUsed && PointA != null && PointB != null)
@@ -79,12 +85,24 @@ namespace Unity.FPS.Game
                 _movingDown = false;
                 _time = 0f;
 
-                ElevatorIsMoving = true; // 🚫 bloquear crouch mientras sube
+                ElevatorIsMoving = true;
                 Debug.Log("🔒 Inputs bloqueados (ascensor subiendo)");
+
+                // 🚀 Transporte seguro activado
+                _transportingPlayer = true;
+
+                // 🆕 Guardar el offset exacto del jugador
+                _playerLocalOffset = PlayerObject.transform.position - PlatformToMove.position;
+
+                if (PlayerController != null)
+                    PlayerController.enabled = false;
+
+                if (PlayerCollider != null)
+                    PlayerCollider.enabled = false;
             }
         }
 
-        // ===== MOVER HACIA ABAJO =====
+        // ===== BAJAR =====
         public void StartMoveDown()
         {
             if (_canGoDown && PointA != null && PointB != null)
@@ -93,61 +111,80 @@ namespace Unity.FPS.Game
                 _movingUp = false;
                 _time = 0f;
 
-                ElevatorIsMoving = true; // también bloquea mientras baja (puedes quitarlo si no quieres)
+                ElevatorIsMoving = true;
 
                 if (KillZone != null)
-                {
                     KillZone.SetActive(false);
-                    Debug.Log("KillZone DESACTIVADA al comenzar descenso");
-                }
             }
             else
             {
-                Debug.Log("⛔ Intento de bajar, pero aún no se puede (waves no completadas)");
+                Debug.Log("⛔ Intento de bajar, pero aún no se puede");
             }
         }
 
+        // ===== UPDATE =====
         void Update()
         {
+            // SUBIENDO
             if (_movingUp && PointA != null && PointB != null)
             {
                 _time += Time.deltaTime;
                 float t = Mathf.Clamp01(_time / MoveDuration);
                 float e = Easing.Evaluate(t);
-                PlatformToMove.position = Vector3.Lerp(PointA.position, PointB.position, e);
-                Physics.SyncTransforms(); // 🧱 fuerza actualización de físicas del ascensor
 
+                // Mover plataforma
+                PlatformToMove.position = Vector3.Lerp(PointA.position, PointB.position, e);
+                Physics.SyncTransforms();
+
+                // 🚀 Transporte seguro con offset exacto
+                if (_transportingPlayer && PlayerObject != null)
+                {
+                    Vector3 targetPos = PlatformToMove.position + _playerLocalOffset;
+
+                    // Altura mínima sobre el ascensor
+                    float minY = PlatformToMove.position.y + PlayerYOffset;
+
+                    // Si el offset Y original era mayor (por ejemplo porque el jugador estaba saltando),
+                    // lo respetamos.
+                    if (targetPos.y < minY)
+                        targetPos.y = minY;
+
+                    PlayerObject.transform.position = targetPos;
+
+                }
+
+                // Llegó arriba
                 if (t >= 1f)
                 {
                     _movingUp = false;
                     _time = 0f;
                     OnReachedTop();
 
-                    ElevatorIsMoving = false; // ✅ liberar input
-                    Debug.Log("🔓 Inputs desbloqueados (ascensor arriba)");
+                    ElevatorIsMoving = false;
                 }
             }
+
+            // BAJANDO
             else if (_movingDown && PointA != null && PointB != null)
             {
                 _time += Time.deltaTime;
                 float t = Mathf.Clamp01(_time / MoveDuration);
                 float e = Easing.Evaluate(t);
-                PlatformToMove.position = Vector3.Lerp(PointB.position, PointA.position, e);
-                Physics.SyncTransforms(); // 🧱 sincroniza físicas en el descenso también
 
+                PlatformToMove.position = Vector3.Lerp(PointB.position, PointA.position, e);
+                Physics.SyncTransforms();
 
                 if (t >= 1f)
                 {
                     _movingDown = false;
                     _time = 0f;
 
-                    ElevatorIsMoving = false; // ✅ liberar input
-                    Debug.Log("✔ Ascensor volvió a bajar y desbloqueó inputs");
+                    ElevatorIsMoving = false;
                 }
             }
         }
 
-        // ===== LÓGICA KILLZONE =====
+        // ===== LLEGÓ ARRIBA =====
         void OnReachedTop()
         {
             if (KillZone != null)
@@ -155,6 +192,15 @@ namespace Unity.FPS.Game
 
             EventManager.Broadcast(new ElevatorReachedTopEvent());
             Debug.Log("📢 Evento lanzado: Ascensor llegó al punto B");
+
+            // 🔓 FIN transporte seguro
+            _transportingPlayer = false;
+
+            if (PlayerController != null)
+                PlayerController.enabled = true;
+
+            if (PlayerCollider != null)
+                PlayerCollider.enabled = true;
         }
 
         IEnumerator EnableKillZoneAfterDelay()
@@ -167,7 +213,7 @@ namespace Unity.FPS.Game
             }
         }
 
-        // ===== RESETEO =====
+        // ===== RESET =====
         public void ResetElevatorAndKillZone()
         {
             if (PlatformToMove != null && PointA != null)
@@ -182,27 +228,26 @@ namespace Unity.FPS.Game
             _alreadyUsed = false;
             _canGoDown = false;
 
-            ElevatorIsMoving = false; // ✅ asegurarse de liberar input
+            ElevatorIsMoving = false;
+            _transportingPlayer = false;
 
-            Debug.Log("Ascensor reseteado y KillZone desactivada");
+            if (PlayerController != null)
+                PlayerController.enabled = true;
+
+            if (PlayerCollider != null)
+                PlayerCollider.enabled = true;
         }
 
         void OnTriggerEnter(Collider other)
         {
             if (other.CompareTag("Player"))
-            {
                 other.transform.SetParent(PlatformToMove);
-                Debug.Log("👣 Jugador ahora hijo del ascensor");
-            }
         }
 
         void OnTriggerExit(Collider other)
         {
             if (other.CompareTag("Player"))
-            {
                 other.transform.SetParent(null);
-                Debug.Log("👣 Jugador liberado del ascensor");
-            }
         }
     }
 }

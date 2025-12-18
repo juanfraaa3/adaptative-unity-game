@@ -28,6 +28,10 @@ namespace Unity.FPS.Game
         private int totalDeathsByEnemies = 0;
         private int totalDeathsByVoid = 0;
 
+        // ===== Ayuda adaptativa =====
+        public static int ConsecutiveVoidDeaths = 0;
+
+
         // ===== Enemigos eliminados =====
         private int enemiesKilledSinceLastCheckpoint = 0;
         private int totalEnemiesKilled = 0;
@@ -73,7 +77,7 @@ namespace Unity.FPS.Game
                 "Disparos Totales,Acertados Totales,Fallados Totales,Precisión Total (%)"
             );
 
-            Debug.Log("📊 PlayerStats inicializado con columna de enemigos eliminados (vFinal).");
+            //Debug.Log("📊 PlayerStats inicializado con columna de enemigos eliminados (vFinal).");
         }
 
         // ===============================
@@ -133,7 +137,7 @@ namespace Unity.FPS.Game
             {
                 shotgunShotsFired++;
                 shotgunCount++;
-                Debug.Log($"[Shotgun #{shotgunCount}] ❌ Escopetazo completamente fallado (0/{SHOTGUN_PELLETS})");
+                //Debug.Log($"[Shotgun #{shotgunCount}] ❌ Escopetazo completamente fallado (0/{SHOTGUN_PELLETS})");
                 SaveCSV();
             }
         }
@@ -151,11 +155,11 @@ namespace Unity.FPS.Game
             if (acertado)
             {
                 shotgunHits++;
-                Debug.Log($"[Shotgun #{shotgunCount}] ✅ Escopetazo acertado ({shotgunClusterHits}/{SHOTGUN_PELLETS}) → {ratio * 100f:F1}%");
+                //Debug.Log($"[Shotgun #{shotgunCount}] ✅ Escopetazo acertado ({shotgunClusterHits}/{SHOTGUN_PELLETS}) → {ratio * 100f:F1}%");
             }
             else
             {
-                Debug.Log($"[Shotgun #{shotgunCount}] ❌ Escopetazo fallado ({shotgunClusterHits}/{SHOTGUN_PELLETS}) → {ratio * 100f:F1}%");
+                //Debug.Log($"[Shotgun #{shotgunCount}] ❌ Escopetazo fallado ({shotgunClusterHits}/{SHOTGUN_PELLETS}) → {ratio * 100f:F1}%");
             }
 
             shotgunClusterHits = 0;
@@ -177,6 +181,9 @@ namespace Unity.FPS.Game
             deathsByEnemiesSinceLastCheckpoint++;
             totalDeathsByEnemies++;
             RegisterDeath();
+
+            // Reiniciar racha de muertes por vacío
+            ConsecutiveVoidDeaths = 0;
         }
 
         public void RegisterVoidDeath()
@@ -184,6 +191,9 @@ namespace Unity.FPS.Game
             deathsByVoidSinceLastCheckpoint++;
             totalDeathsByVoid++;
             RegisterDeath();
+
+            ConsecutiveVoidDeaths++;
+            //Debug.Log($"💀 Muerte por vacío #{ConsecutiveVoidDeaths} consecutiva.");
         }
 
         // ===============================
@@ -255,7 +265,7 @@ namespace Unity.FPS.Game
             shotgunHits = 0;
 
             SaveCSV();
-            Debug.Log($"✅ Checkpoint '{checkpointName}' registrado con métricas y enemigos eliminados.");
+            //Debug.Log($"✅ Checkpoint '{checkpointName}' registrado con métricas y enemigos eliminados.");
         }
 
         // ===============================
@@ -280,7 +290,7 @@ namespace Unity.FPS.Game
                 FinalizeShotgunCluster();
 
             SaveCSV();
-            Debug.Log("💾 CSV guardado correctamente (auto y en cierre).");
+            //Debug.Log("💾 CSV guardado correctamente (auto y en cierre).");
         }
     }
 }

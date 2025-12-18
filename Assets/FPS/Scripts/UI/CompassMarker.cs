@@ -6,18 +6,21 @@ namespace Unity.FPS.UI
 {
     public class CompassMarker : MonoBehaviour
     {
-        [Tooltip("Main marker image")] public Image MainImage;
+        [Tooltip("Main marker image")]
+        public Image MainImage;
 
         [Tooltip("Canvas group for the marker")]
         public CanvasGroup CanvasGroup;
 
-        [Header("Enemy element")] [Tooltip("Default color for the marker")]
+        [Header("Enemy element")]
+        [Tooltip("Default color for the marker")]
         public Color DefaultColor;
 
-        [Tooltip("Alternative color for the marker")]
+        [Tooltip("Alternative color for the marker when targeting player")]
         public Color AltColor;
 
-        [Header("Direction element")] [Tooltip("Use this marker as a magnetic direction")]
+        [Header("Direction element")]
+        [Tooltip("Use this marker as a magnetic direction")]
         public bool IsDirection;
 
         [Tooltip("Text content for the direction")]
@@ -29,10 +32,12 @@ namespace Unity.FPS.UI
         {
             if (IsDirection && TextContent)
             {
+                // For N/E/S/W directions
                 TextContent.text = textDirection;
             }
             else
             {
+                // For enemy markers
                 m_EnemyController = compassElement.transform.GetComponent<EnemyController>();
 
                 if (m_EnemyController)

@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEngine.Events;
 
+
 namespace Unity.FPS.Gameplay
 {
     [RequireComponent(typeof(CharacterController), typeof(PlayerInputHandler), typeof(AudioSource))]
@@ -113,6 +114,10 @@ namespace Unity.FPS.Gameplay
         public bool IsDead { get; private set; }
         public bool IsCrouching { get; private set; }
 
+        // 🔥 Velocidad vertical REAL inmediatamente antes de que el Controller toque el suelo
+        public float LastVerticalSpeedBeforeGrounding { get; private set; } = 0f;
+
+
         public float RotationMultiplier
         {
             get
@@ -191,10 +196,16 @@ namespace Unity.FPS.Gameplay
 
             bool wasGrounded = IsGrounded;
             GroundCheck();
-
+            if (!IsGrounded && wasGrounded)
+            {
+                //if (landingMetrics != null)
+                //    landingMetrics.StartLandingAttempt();
+            }
             // landing
             if (IsGrounded && !wasGrounded)
             {
+                //if (landingMetrics != null)
+                //    landingMetrics.RegisterLanding();
                 // Fall damage
                 float fallSpeed = -Mathf.Min(CharacterVelocity.y, m_LatestImpactSpeed.y);
                 float fallSpeedRatio = (fallSpeed - MinSpeedForFallDamage) /
@@ -376,7 +387,7 @@ namespace Unity.FPS.Gameplay
                     CharacterVelocity += Vector3.down * GravityDownForce * Time.deltaTime;
                 }
             }
-
+            LastVerticalSpeedBeforeGrounding = CharacterVelocity.y;
             // apply the final calculated velocity value as a character movement
             Vector3 capsuleBottomBeforeMove = GetCapsuleBottomHemisphere();
             Vector3 capsuleTopBeforeMove = GetCapsuleTopHemisphere(m_Controller.height);

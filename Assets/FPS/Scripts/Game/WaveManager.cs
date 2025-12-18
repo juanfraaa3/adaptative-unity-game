@@ -2,10 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.FPS.Game;   // para Health y EventManager
-
+using System.IO;
 public class WaveManager : MonoBehaviour
 {
     [Header("Configuración")]
+    public JitterMetricsLogger jitterLogger;
+
     public EnemySpawner[] spawners;
     public Wave[] waves;
     public float timeBetweenWaves = 5f;
@@ -26,8 +28,13 @@ public class WaveManager : MonoBehaviour
     private int remainingToSpawn = 0;
     private bool waveCompleting = false;
 
+    private int enemyCounter = 0;
+
     // Propiedad pública para otros sistemas (Objectives, respawn, etc.)
     public int CurrentWaveIndex => currentWaveIndex;
+
+    private float waveStartTime = 0f;
+
 
     void Start()
     {
@@ -77,11 +84,21 @@ public class WaveManager : MonoBehaviour
         aliveEnemies.Clear();
 
         yield return new WaitForSeconds(timeBetweenWaves);
+        waveStartTime = Time.time;
+
+        if (jitterLogger != null)
+            jitterLogger.LastWaveStartTime = waveStartTime;
 
         if (currentWaveIndex < waves.Length)
         {
             Wave wave = waves[currentWaveIndex];
+            enemyCounter = 0;
             Debug.Log("Iniciando " + wave.waveName);
+
+            // 🔥 Avisar al JitterLogger del número de oleada actual
+            if (jitterLogger != null)
+                jitterLogger.WaveNumber = currentWaveIndex;
+
             EventManager.Broadcast(new WaveStartedEvent(currentWaveIndex));
             yield return StartCoroutine(SpawnWave(wave));
         }
@@ -91,6 +108,10 @@ public class WaveManager : MonoBehaviour
     {
         aliveEnemies.Clear();
         waveCompleting = false;
+
+        // ACTIVAR LOGGING
+        if (jitterLogger != null)
+            jitterLogger.loggingActive = true;
 
         // Contamos cuántos enemigos deben spawnearse en total
         remainingToSpawn = 0;
@@ -105,16 +126,32 @@ public class WaveManager : MonoBehaviour
             {
                 EnemySpawner spawner = spawners[Random.Range(0, spawners.Length)];
                 GameObject enemy = spawner.SpawnEnemy(enemySet.enemyPrefab);
+                enemyCounter++;
+                string newName = $"Enemy{enemyCounter}_Wave{currentWaveIndex}_{enemySet.enemyPrefab.name}";
+                enemy.name = newName;
+
+
+                if (jitterLogger != null)
+                    jitterLogger.NotifyEnemySpawned(enemy.transform);
+
 
                 if (enemy != null)
                 {
                     aliveEnemies.Add(enemy);
 
+                    if (jitterLogger != null)
+                        jitterLogger.NotifyEnemySpawned(enemy.transform);
+
                     Health health = enemy.GetComponent<Health>();
                     if (health != null)
                     {
                         GameObject captured = enemy; // evitar cierre sobre variable mutable
-                        health.OnDie += () => OnEnemyDied(captured);
+                        health.OnDie += () =>
+                            {
+                                OnEnemyDied(captured);
+                                if (jitterLogger != null)
+                                    jitterLogger.NotifyEnemyKilled(captured.transform);
+                            };
                     }
                 }
 
@@ -135,10 +172,31 @@ public class WaveManager : MonoBehaviour
         // Solo completamos la wave si no quedan vivos ni pendientes por salir
         if (!waveCompleting && remainingToSpawn <= 0 && aliveEnemies.Count == 0)
         {
+
+            if (jitterLogger != null)
+                jitterLogger.loggingActive = false;
+
             waveCompleting = true;
+
+            float successTime = (Time.time - waveStartTime) + timeBetweenWaves;
+
+            if (jitterLogger != null)
+            {
+                // Registrar en el CSV
+                File.AppendAllText(
+                    jitterLogger.FilePath,
+                    $"WaveSuccessTime;{currentWaveIndex};{successTime.ToString("F4")}\n"
+                );
+            }
+
+            Debug.Log($"⏱️ Wave {currentWaveIndex} completada en {successTime:F4} segundos");
 
             Debug.Log("Oleada " + waves[currentWaveIndex].waveName + " completada!");
             EventManager.Broadcast(new WaveCompletedEvent(currentWaveIndex));
+
+            // 🔥 Escribir separador en el CSV de ronda completada
+            if (jitterLogger != null)
+                jitterLogger.WriteWaveCompletedSeparator(currentWaveIndex);
 
             currentWaveIndex++;
 
@@ -151,6 +209,10 @@ public class WaveManager : MonoBehaviour
             {
                 Debug.Log("✅ ¡Todas las oleadas completadas!");
                 EventManager.Broadcast(new AllWavesCompletedEvent());
+
+                if (jitterLogger != null)
+                    jitterLogger.loggingActive = false;
+
                 allWavesCompleted = true;
             }
         }
@@ -213,4 +275,10 @@ public class WaveManager : MonoBehaviour
             Debug.Log("Jugador salió de la zona de waves");
         }
     }
+
+    public float GetWaveTimeWithOffset()
+    {
+        return (Time.time - waveStartTime) + timeBetweenWaves;
+    }
+
 }
